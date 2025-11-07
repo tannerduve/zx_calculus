@@ -1,4 +1,5 @@
 import ZxCalculus.AST
+open Real
 
 /-- n-wire identity as a term (handy shorthands). -/
 def idn (n : ℕ) : ZxTerm n n := ZxTerm.gen Generator.id
@@ -61,11 +62,11 @@ inductive ZXAx : ∀ {n m}, ZxTerm n m → ZxTerm n m → Prop
       (ZxTerm.gen (Generator.X α 1 1) ; ZxTerm.gen (Generator.Z 0 1 2))
       (ZxTerm.gen (Generator.Z 0 1 2) ;
        (ZxTerm.gen (Generator.X α 1 1) ⊗ ZxTerm.gen (Generator.X α 1 1)))
-/-- π-copy (NOT flips Z-phase): here π is `1·π`. -/
-| pi_copy (α) :
+/-- π-copy: NOT gate (X_π) copies through Z-spider and flips its phase. -/
+| pi_copy (α : Real.Angle) :
     ZXAx
-      (ZxTerm.gen (Generator.X 1 1 1) ; ZxTerm.gen (Generator.Z α 1 1))
-      (ZxTerm.gen (Generator.Z (-α) 1 1) ; ZxTerm.gen (Generator.X 1 1 1))
+      (ZxTerm.gen (Generator.X (π : ℝ) 1 1) ; ZxTerm.gen (Generator.Z α 1 1))
+      (ZxTerm.gen (Generator.Z (-α) 1 1) ; ZxTerm.gen (Generator.X (π : Real.Angle) 1 1))
 
 /-- Contextual closure. -/
 inductive ZXStep : ∀ {n m}, ZxTerm n m → ZxTerm n m → Prop
