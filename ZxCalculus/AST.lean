@@ -1,5 +1,6 @@
 import Mathlib.Data.Rat.Defs
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Angle
+open Real
 
 inductive Generator : ℕ → ℕ → Type
 | empty : Generator 0 0 -- the empty diagram
@@ -43,3 +44,69 @@ noncomputable def dagger {n m : ℕ} : ZxTerm n m → ZxTerm m n
   | .cap           => ZxTerm.gen Generator.cup
 | .seq f g   => dagger g ; dagger f
 | .tens f g  => dagger f ⊗ dagger g
+
+
+-- Trying non-dependent AST with separate type system
+
+inductive Generator' : Type
+| empty : Generator'
+| id : ℕ → Generator'
+| swap : ℕ → ℕ → Generator'
+| H : Generator'
+| Z : Real.Angle → ℕ → ℕ → Generator'
+| X : Real.Angle → ℕ → ℕ → Generator'
+| cup : Generator'
+| cap : Generator'
+
+inductive ZxTerm' : Type
+| gen : Generator' → ZxTerm'
+| comp : ZxTerm' → ZxTerm' → ZxTerm'
+| tens : ZxTerm' → ZxTerm' → ZxTerm'
+
+namespace ZxTerm'
+
+def empty : ZxTerm' := ZxTerm'.gen Generator'.empty
+
+def idn (n : ℕ) : ZxTerm' := ZxTerm'.gen (Generator'.id n)
+
+def swap (n m : ℕ) : ZxTerm' := ZxTerm'.gen (Generator'.swap n m)
+
+def H : ZxTerm' := ZxTerm'.gen Generator'.H
+
+def Z (α : Real.Angle) (n m : ℕ) : ZxTerm' := ZxTerm'.gen (Generator'.Z α n m)
+
+def X (α : Real.Angle) (n m : ℕ) : ZxTerm' := ZxTerm'.gen (Generator'.X α n m)
+
+def cup : ZxTerm' := ZxTerm'.gen Generator'.cup
+
+def cap : ZxTerm' := ZxTerm'.gen Generator'.cap
+
+end ZxTerm'
+
+open ZxTerm'
+
+infixl:90 " ; " => comp
+infixl:80 " ⊗ " => tens
+
+noncomputable def dagger' : ZxTerm' → ZxTerm'
+| .gen g => match g with
+  | .empty         => empty
+  | .id n          => idn n
+  | .swap n m      => swap m n
+  | .H             => H
+  | .Z α n m       => Z (- α) m n
+  | .X α n m       => X (- α) m n
+  | .cup           => cap
+  | .cap           => cup
+| f ; g  => dagger' g ; dagger' f
+| f ⊗ g  => dagger' f ⊗ dagger' g
+
+inductive hasType : ZxTerm' → ℕ → ℕ → Prop where
+| empty : hasType empty 0 0
+| idn : ∀ n, hasType (idn n) n n
+| swap : ∀ n m, hasType (swap n m) m n
+| hadamard : hasType H 1 1
+| Zspider : ∀ α n m, hasType (Z α n m) n m
+| Xspider : ∀ α n m, hasType (X α n m) n m
+| bellState : hasType cup 0 2
+| bellEffect : hasType cap 2 0
