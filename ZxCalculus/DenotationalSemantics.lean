@@ -7,6 +7,7 @@ import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.Tactic.Cases
 import Mathlib.Analysis.Normed.Lp.PiLp
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.LinearAlgebra.TensorProduct.Basic
 
 attribute [local simp] add_assoc add_comm mul_assoc mul_add add_mul
 
@@ -97,5 +98,9 @@ def interp {n m : ℕ} : ZxTerm n m → (LinMap n m)
       let φf := interp f
       let φg  := interp g
       LinearMap.comp φg φf
-  | f ⊗ g => sorry  -- TODO: tensor product of linear maps
+  | f ⊗ g =>
+    let φf := interp f
+    let φg  := interp g
+    -- TODO - define tensor product in our normed space
+    sorry
 end
