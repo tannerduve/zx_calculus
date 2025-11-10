@@ -26,9 +26,9 @@ Recursive syntax for ZX diagrams/terms
 - If A, B are ZX diagrams, then A ; B is a ZX diagram
 -/
 inductive ZxTerm : ℕ → ℕ → Type
-| gen : {n m : ℕ} → Generator n m → ZxTerm n m
-| comp   : {n k m : ℕ} → ZxTerm n k → ZxTerm k m → ZxTerm n m
-| tens  : {n₁ m₁ n₂ m₂ : ℕ} → ZxTerm n₁ m₁ → ZxTerm n₂ m₂ → ZxTerm (n₁ + n₂) (m₁ + m₂)
+| gen {n m : ℕ} (g : Generator n m) : ZxTerm n m
+| comp {n k m : ℕ} (A : ZxTerm n k) (B : ZxTerm k m) : ZxTerm n m
+| tens {n₁ m₁ n₂ m₂ : ℕ} (A : ZxTerm n₁ m₁) (B : ZxTerm n₂ m₂) : ZxTerm (n₁ + n₂) (m₁ + m₂)
 
 -- Notation for ZX diagrams
 infixl:90 " ; " => ZxTerm.comp   -- Sequential composition

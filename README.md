@@ -57,12 +57,11 @@ Current implementation includes:
 - Complete generator interpretations (H, Z/X spiders, cup/cap)
 - Tensor product of linear maps
 - Additional rules (bialgebra, Euler decomposition, Hopf)
-- Soundness proof (rewrite rules preserve semantics)
 - Better diagram-like notation
 
-**Planned:**
-- Completeness results
-
+**To prove:**
+- Soundess: if a diagram `A` rewrites to a diagram `B`, then they represent the same linear map. ie. (`A` --> `B`) ==> `[[A]] == [[B]]`
+- Completeness: Every linear map can be represented as a ZX diagram
 
 ## Building
 
