@@ -3,9 +3,12 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Angle
 open Real
 
 /--
-Syntax for the generators of the zx-calculus, represented as an inductive (enum) type indexed by
-the number of input and output wires
+Syntax for the generators of the zx-calculus, represented as an inductive (aka enum) type indexed by
+the number of input and output wires.
 -/
+-- Currently we use real numbers for phases
+-- To be more mathematically precise we would use `Real.Angle` but this is noncomputable
+-- (ie. usable for proofs but can't execute the code)
 inductive Generator : ℕ → ℕ → Type
 | empty : Generator 0 0 -- the empty diagram
 | id    :  Generator 1 1 -- the identity generator
