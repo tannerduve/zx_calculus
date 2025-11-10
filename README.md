@@ -45,8 +45,7 @@ Interprets ZX diagrams as linear maps:
 - Defines `interp : ZxTerm n m → LinMap n m`
 
 ## Status
-
-This is an active research project. Current implementation includes:
+Current implementation includes:
 
 **Completed:**
 - Core AST with dependent types
