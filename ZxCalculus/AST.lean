@@ -56,9 +56,6 @@ end ZxTerm
 open ZxTerm
 
 -- Define the dagger (adjoint) of a ZX term
--- Currently we use real numbers for phases
--- To be more mathematically precise we would use `Real.Angle` but this is noncomputable
--- (ie. usable for proofs but can't execute the code)
 def dagger {n m : ℕ} : ZxTerm n m → ZxTerm m n
 | .gen g => match g with
   | .empty         => ZxTerm.gen Generator.empty
