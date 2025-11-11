@@ -78,3 +78,11 @@ lake build
 ## Theorem Library
 
 This repo also includes a theorem library `tests/` to check for correct implementation of the ZX-Calculus in Lean and to describe/prove various concepts in quantum computing. More TBD.
+
+## References
+
+- Bob Coecke and Aleks Kissinger. *Picturing Quantum Processes: A First Course in Quantum Theory and Diagrammatic Reasoning.* Cambridge University Press, 2017.
+
+- PennyLane. "Introduction to the ZX-calculus." https://pennylane.ai/qml/demos/tutorial_zx_calculus
+
+- Chris Heunen and Jamie Vicary. *Categories for Quantum Theory: An Introduction.* Oxford University Press, 2019. https://doi.org/10.1093/oso/9780198739623.001.0001

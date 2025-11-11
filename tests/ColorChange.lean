@@ -3,13 +3,13 @@ open ZxTerm Real
 
 /-- Hadamard conjugation converts Z to X -/
 theorem hadamard_conjugates_z_to_x :
-  ZxEquiv ((H ; Z (π/4) 1 1) ; H) (X (π/4) 1 1) := by
-  exact ZxEquiv.color_change_Z (π/4) 1 1
+  ZxEquiv ((H ; Z (1/4) 1 1) ; H) (X (1/4) 1 1) := by
+  exact ZxEquiv.color_change_Z (1/4) 1 1
 
 /-- Hadamard conjugation converts X to Z -/
 theorem hadamard_conjugates_x_to_z :
-  ZxEquiv ((H ; X (π/3) 1 1) ; H) (Z (π/3) 1 1) := by
-  exact ZxEquiv.color_change_X (π/3) 1 1
+  ZxEquiv ((H ; X (1/3) 1 1) ; H) (Z (1/3) 1 1) := by
+  exact ZxEquiv.color_change_X (1/3) 1 1
 
 /-- Double Hadamard is identity (via color change) -/
 theorem double_hadamard_via_color_change :

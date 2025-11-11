@@ -3,8 +3,8 @@ open ZxTerm Real
 
 /-- Composition is associative -/
 theorem comp_assoc :
-  ZxEquiv ((H ; Z π 1 1) ; X (π/2) 1 1) (H ; (Z π 1 1 ; X (π/2) 1 1)) := by
-  exact ZxEquiv.assoc_comp H (Z π 1 1) (X (π/2) 1 1)
+  ZxEquiv ((H ; Z 1 1 1) ; X (1/2) 1 1) (H ; (Z 1 1 1 ; X (1/2) 1 1)) := by
+  exact ZxEquiv.assoc_comp H (Z 1 1 1) (X (1/2) 1 1)
 
 /-- Identity is left unit -/
 theorem id_left_unit :

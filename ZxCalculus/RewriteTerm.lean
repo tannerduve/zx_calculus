@@ -43,7 +43,7 @@ This inductive type defines when two ZX diagrams are equivalent under the ZX-cal
 The relation combines:
 - Standard equivalence relation structure (reflexivity, symmetry, transitivity)
 - Congruence with respect to sequential (`;`) and parallel (`⊗`) composition
-- Structural axioms from symmetric monoidal category theory
+- Structural axioms from symmetric monoidal categories ("only topology matters")
 - ZX-calculus specific rewrite rules (spider fusion, color change, etc.)
 
 Many constructors use `simpa` to resolve type equalities arising from non-definitional
@@ -97,12 +97,12 @@ inductive ZxEquiv : {n m : ℕ} → ZxTerm n m → ZxTerm n m → Prop
 -- ZX-calculus specific rewrite rules
 
 /-- Spider fusion for Z spiders: composing Z spiders adds their phases -/
-| z_fus : ∀ {n m k} (α β : ℝ), ZxEquiv
+| z_fus : ∀ {n m k} (α β : ℚ), ZxEquiv
     ((Z α n m).comp (Z β m k))
     (Z (α + β) n k)
 
 /-- Spider fusion for X spiders: composing X spiders adds their phases -/
-| x_fus : ∀ {n m k} (α β : ℝ), ZxEquiv
+| x_fus : ∀ {n m k} (α β : ℚ), ZxEquiv
     ((X α n m).comp (X β m k))
     (X (α + β) n k)
 
@@ -113,25 +113,25 @@ inductive ZxEquiv : {n m : ℕ} → ZxTerm n m → ZxTerm n m → Prop
 | x_id : ZxEquiv (X 0 1 1) id
 
 /-- Color change: Hadamard conjugation converts Z spiders to X spiders -/
-| color_change_Z : ∀ (α : ℝ) (n m : ℕ), ZxEquiv
+| color_change_Z : ∀ (α : ℚ) (n m : ℕ), ZxEquiv
     (((tensor_pow H n).comp (by simpa [Nat.add_zero] using (Z α n m))).comp (tensor_pow H m))
     (by simpa [Nat.add_zero] using (X α n m))
 
 /-- Color change: Hadamard conjugation converts X spiders to Z spiders -/
-| color_change_X : ∀ (α : ℝ) (n m : ℕ), ZxEquiv
+| color_change_X : ∀ (α : ℚ) (n m : ℕ), ZxEquiv
     (((tensor_pow H n).comp (by simpa [Nat.add_zero] using (X α n m))).comp (tensor_pow H m))
     (by simpa [Nat.add_zero] using (Z α n m))
 
 -- π-copy rules: spiders with phase π can "copy through" opposite-color spiders with phase negation
 /-- π-copy for X through Z: an X-π spider commutes with a Z spider, negating the phase -/
 | z_pi_copy_simple : ∀ {α}, ZxEquiv
-    ((X π 1 1).comp (Z α 1 1))
-    ((Z (-α) 1 1).comp (X π 1 1))
+    ((X 1 1 1).comp (Z α 1 1))
+    ((Z (-α) 1 1).comp (X 1 1 1))
 
 /-- π-copy for Z through X: a Z-π spider commutes with an X spider, negating the phase -/
 | x_pi_copy_simple : ∀ {α}, ZxEquiv
-    ((Z π 1 1).comp (X α 1 1))
-    ((X (-α) 1 1).comp (Z π 1 1))
+    ((Z 1 1 1).comp (X α 1 1))
+    ((X (-α) 1 1).comp (Z 1 1 1))
 
 -- TODO: Additional rules to implement
 -- - Bialgebra rule: (Z⊗Z) ; swap ; (X⊗X) = (X⊗X) ; swap ; (Z⊗Z)
