@@ -145,3 +145,5 @@ def dagger {n m : ℕ} : ZxTerm n m → ZxTerm m n
     | .cap => ZxTerm.gen Generator.cup
   | f ; g => dagger g ; dagger f
   | f ⊗ g => dagger f ⊗ dagger g
+
+@[inherit_doc] notation:max A"†" => dagger A

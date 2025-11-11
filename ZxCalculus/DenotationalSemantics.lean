@@ -299,3 +299,14 @@ def interp {n m : ℕ} : ZxTerm n m → LinMap n m
       let i_prod := finProdFinEquiv.symm (i.cast (by ring))
       let j_prod := finProdFinEquiv.symm (j.cast (by ring))
       kronecker (interp f) (interp g) i_prod j_prod
+
+
+/-- The syntactic dagger operation corresponds to matrix conjugate transpose (adjoint) -/
+theorem dagger_adjoint_property {n m : ℕ} (d : ZxTerm n m) :
+  interp (d†) = (interp d)ᴴ := by
+  sorry
+
+/-- Alternative formulation: dagger satisfies the adjoint property via inner products -/
+theorem dagger_adjoint_property' {n m : ℕ} (d : ZxTerm n m) (x : Qubits n) (y : Qubits m) :
+  (y)ᴴ * (interp d * x) = (interp (d†) * y)ᴴ * x := by
+  sorry
