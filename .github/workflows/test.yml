@@ -1,0 +1,35 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+      - seun/cleanup
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Lean
+        uses: leanprover/lean-action@v1
+        with:
+          build-args: ""
+
+      - name: Build main library
+        run: lake build
+
+      - name: Test - Fusion
+        run: lake build tests.Fusion
+        
+      - name: Test - Identity
+        run: lake build tests.Identity
+
+      - name: All tests passed
+        run: echo "✓ All tests passed successfully!"
