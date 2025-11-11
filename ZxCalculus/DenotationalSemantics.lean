@@ -20,6 +20,8 @@ Hilbert spaces, represented concretely as complex matrices.
 
 * `ket0`, `ket1`: Computational basis states |0⟩, |1⟩
 * `ketPlus`, `ketMinus`: Hadamard basis states |+⟩ = |0⟩+|1⟩, |-⟩ = |0⟩-|1⟩
+* `bra0`, `bra1`: Dual computational basis states ⟨0|, ⟨1|
+* `braPlus`, `braMinus`: Dual Hadamard basis states ⟨+|, ⟨-|
 * `Aᴴ`: Conjugate transpose (adjoint) of matrix A
 -/
 
