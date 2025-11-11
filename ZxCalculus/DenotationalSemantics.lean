@@ -263,8 +263,6 @@ Each generator is mapped to its corresponding linear map:
 * `X α n m`: X-spider with phase α*π (TODO: implement)
 * `cup`: Bell state |00⟩ + |11⟩
 * `cap`: Bell effect ⟨00| + ⟨11|
-
-The interpretation follows standard ZX-calculus semantics without normalization factors.
 -/
 def interpGen {n m : ℕ} (g : Generator n m) : LinMap n m :=
   match g with
