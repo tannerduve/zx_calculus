@@ -133,6 +133,12 @@ inductive ZxEquiv : {n m : ℕ} → ZxTerm n m → ZxTerm n m → Prop
     ((Z 1 1 1).comp (X α 1 1))
     ((X (-α) 1 1).comp (Z 1 1 1))
 
+/-- Phase periodicity: Z-spiders with phases differing by 2 (i.e., 2π) are equivalent -/
+| z_phase_period : ∀ {α n m}, ZxEquiv (Z (α + 2) n m) (Z α n m)
+
+/-- Similar for X-spiders -/
+| x_phase_period : ∀ {α n m}, ZxEquiv (X (α + 2) n m) (X α n m)
+
 -- TODO: Additional rules to implement
 -- - Bialgebra rule: (Z⊗Z) ; swap ; (X⊗X) = (X⊗X) ; swap ; (Z⊗Z)
 -- - Euler decomposition: H = Z(π/2) ; X(π/2) ; Z(π/2)
