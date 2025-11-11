@@ -40,10 +40,11 @@ Defines `ZxEquiv`, an inductive equivalence relation encoding:
 
 ### Denotational Semantics (`ZxCalculus/DenotationalSemantics.lean`)
 
-Interprets ZX diagrams as linear maps:
-- Maps n-wire diagrams to linear operators on ℂ^(2^n)
-- Uses Mathlib's `PiLp` for Hilbert space structure
-- Defines `interp : ZxTerm n m → LinMap n m`
+Interprets ZX diagrams as linear maps (matrices):
+- Maps n-wire diagrams to matrices representing linear operators on ℂ^(2^n)
+- Uses Mathlib's matrix operations including Kronecker product for tensor composition
+- Defines `interp : ZxTerm n m → LinMap n m` where `LinMap n m := Matrix (Fin (2^m)) (Fin (2^n)) ℂ`
+- Implemented generators: identity, empty, swap, Hadamard gate
 
 ## Status
 Current implementation includes:
@@ -52,17 +53,19 @@ Current implementation includes:
 - Core AST with dependent types
 - Structural axioms (monoidal category laws)
 - Basic ZX rewrite rules (spider fusion, color change, π-copy)
-- Denotational semantics framework
+- Matrix-based denotational semantics framework
+- Basic generators: identity, empty, swap (permutation), Hadamard gate
+- Sequential composition (matrix multiplication) and parallel composition (Kronecker product)
 
 **In Progress:**
-- Complete generator interpretations (H, Z/X spiders, cup/cap)
-- Tensor product of linear maps
-- Additional rules (bialgebra, Euler decomposition, Hopf)
+- Z and X spider interpretations (parameterized by phase angle)
+- Cup and cap generators (Bell states and effects)
+- Additional rewrite rules (bialgebra, Euler decomposition, Hopf)
 - Better diagram-like notation
 
 **To prove:**
-- Soundess: if a diagram `A` rewrites to a diagram `B`, then they represent the same linear map. ie. (`A` --> `B`) ==> `[[A]] == [[B]]`
-- Completeness: Every linear map can be represented as a ZX diagram
+- Soundness: if a diagram `A` rewrites to a diagram `B`, then they represent the same linear map. ie. (`A` --> `B`) ==> `[[A]] == [[B]]`
+- Completeness: Every linear map representable in ZX-calculus has a corresponding diagram
 
 ## Building
 
