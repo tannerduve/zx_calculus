@@ -303,10 +303,10 @@ def interp {n m : ℕ} : ZxTerm n m → LinMap n m
 
 /-- The syntactic dagger operation corresponds to matrix conjugate transpose (adjoint) -/
 theorem dagger_adjoint_property {n m : ℕ} (d : ZxTerm n m) :
-  interp (dagger d) = (interp d)ᴴ := by
+  interp (d†) = (interp d)ᴴ := by
   sorry
 
 /-- Alternative formulation: dagger satisfies the adjoint property via inner products -/
 theorem dagger_adjoint_property' {n m : ℕ} (d : ZxTerm n m) (x : Qubits n) (y : Qubits m) :
-  (y)ᴴ * (interp d * x) = (interp (dagger d) * y)ᴴ * x := by
+  (y)ᴴ * (interp d * x) = (interp (d†) * y)ᴴ * x := by
   sorry
