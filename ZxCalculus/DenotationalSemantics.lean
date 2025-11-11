@@ -2,7 +2,7 @@ import Mathlib.LinearAlgebra.Matrix.Kronecker
 import Mathlib.Data.Complex.Basic
 import ZxCalculus.AST
 
-open Matrix Complex
+open Matrix Complex Real
 
 /-- The space of n qubits is represented as 2^n × 1 column vectors -/
 abbrev Qubits (n : ℕ) := Matrix (Fin (2^n)) (Fin 1) ℂ
@@ -93,7 +93,7 @@ lemma basis_normalized_0 : ket0ᴴ * ket0 = 1 := by
     norm_num
   }
 
-/-- Hadamard is self-inverse: H² = 2I (unnormalized) -/
+/-- Hadamard is self-inverse: H² = 2I -/
 lemma hadamard_self_inverse :
   hadamardMatrix * hadamardMatrix = 2 • (1 : Matrix (Fin 2) (Fin 2) ℂ) := by
   ext i j
@@ -121,7 +121,10 @@ def interpGen {n m : ℕ} (g : Generator n m) : LinMap n m :=
   | .id => 1     -- 2×2 identity
   | .swap n m => swap_gen n m
   | .H => ketPlus * ket0ᴴ + ketMinus * ket1ᴴ  -- |+⟩⟨0| + |-⟩⟨1|
-  | .Z α n m => sorry -- Z spider
+  | .Z α n m =>
+    -- Convert rational coefficient to the angle it represents
+    let phase := (α : ℝ) * π
+    sorry -- Z spider
   | .X α n m => sorry -- X spider
   | .cup => ket00 + ket11  -- Bell state (|00⟩ + |11⟩)
   | .cap => ket00ᴴ + ket11ᴴ  -- Bell effect (⟨00| + ⟨11|)

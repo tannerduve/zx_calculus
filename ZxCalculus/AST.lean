@@ -14,8 +14,8 @@ inductive Generator : ℕ → ℕ → Type
 | id    :  Generator 1 1 -- the identity generator
 | swap  : (n m : ℕ) → Generator (n + m) (m + n) -- the swap generator (type (n + m) -> (m + n))
 | H     : Generator 1 1 -- the hadamard generator (type 1 → 1)
-| Z     : (α : ℝ) → (n m : ℕ) → Generator n m -- Z spider with angle α*π (type n → m)
-| X     : (α : ℝ) → (n m : ℕ) → Generator n m -- X spider with angle α*π (type n → m)
+| Z     : (α : ℚ) → (n m : ℕ) → Generator n m -- Z spider with angle α*π (type n → m)
+| X     : (α : ℚ) → (n m : ℕ) → Generator n m -- X spider with angle α*π (type n → m)
 | cup   : Generator 0 2 -- bell state (cup) (type 0 → 2)
 | cap   : Generator 2 0 -- bell effect (cap) (type 2 → 0)
 
@@ -46,9 +46,9 @@ def swap (n m : ℕ) : ZxTerm (n + m) (m + n) := ZxTerm.gen (Generator.swap n m)
 
 def H : ZxTerm 1 1 := ZxTerm.gen Generator.H
 
-def Z (α : ℝ) (n m : ℕ) : ZxTerm n m := ZxTerm.gen (Generator.Z α n m)
+def Z (α : ℚ) (n m : ℕ) : ZxTerm n m := ZxTerm.gen (Generator.Z α n m)
 
-def X (α : ℝ) (n m : ℕ) : ZxTerm n m := ZxTerm.gen (Generator.X α n m)
+def X (α : ℚ) (n m : ℕ) : ZxTerm n m := ZxTerm.gen (Generator.X α n m)
 
 def cup : ZxTerm 0 2 := ZxTerm.gen Generator.cup
 
