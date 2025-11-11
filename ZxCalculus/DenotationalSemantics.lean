@@ -32,6 +32,17 @@ def swap_gen (n m : ℕ) : LinMap (n + m) (m + n) :=
 def basisVector (n : ℕ) (i : Fin (2 ^ n)) : Qubits n :=
   Matrix.of fun j _ => if i = j then 1 else 0
 
+/-- Tensor a single-qubit state with itself n times: |ψ⟩^⊗n -/
+def pow_tens (v : Qubits 1) : (n : ℕ) → Qubits n
+  | 0 => basisVector 0 0  -- Empty state (1×1 identity)
+  | 1 => v
+  | n+1 =>
+      let prev := pow_tens v n
+      -- Kronecker product, then reindex from (Fin 2 × Fin 2^n) to Fin 2^(n+1)
+      Matrix.of fun i _ =>
+        let i_split := finProdFinEquiv.symm (i.cast (by ring))
+        kronecker v prev i_split 0
+
 /-- Single-qubit basis state |0⟩ = [1, 0]ᵀ -/
 def ket0 : Qubits 1 := basisVector 1 0
 
@@ -121,11 +132,14 @@ def interpGen {n m : ℕ} (g : Generator n m) : LinMap n m :=
   | .id => 1     -- 2×2 identity
   | .swap n m => swap_gen n m
   | .H => ketPlus * ket0ᴴ + ketMinus * ket1ᴴ  -- |+⟩⟨0| + |-⟩⟨1|
-  | .Z α n m =>
+  | .Z α n m => -- Z spider
     -- Convert rational coefficient to the angle it represents
     let phase := (α : ℝ) * π
-    sorry -- Z spider
-  | .X α n m => sorry -- X spider
+    sorry
+  | .X α n m => -- X spider
+    -- Convert rational coefficient to the angle it represents
+    let phase := (α : ℝ) * π
+    sorry
   | .cup => ket00 + ket11  -- Bell state (|00⟩ + |11⟩)
   | .cap => ket00ᴴ + ket11ᴴ  -- Bell effect (⟨00| + ⟨11|)
 
