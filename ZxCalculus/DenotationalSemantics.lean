@@ -1,4 +1,4 @@
-import Mathlib.LinearAlgebra.Matrix.Kronecker
+import Mathlib.Data.Matrix.Kronecker
 import Mathlib.Data.Complex.Basic
 import ZxCalculus.AST
 
