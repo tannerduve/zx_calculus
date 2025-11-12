@@ -41,12 +41,10 @@ Current implementation includes:
 - Structural axioms (monoidal category laws)
 - Basic ZX rewrite rules (spider fusion, color change, π-copy)
 - Matrix-based denotational semantics framework
-- Basic generators: identity, empty, swap (permutation), Hadamard gate
+- Generators: identity, empty, swap (permutation), Z and X spiders, Hadamard gate, Bell states and effects
 - Sequential composition (matrix multiplication) and parallel composition (Kronecker product)
 
 **In Progress:**
-- Z and X spider interpretations (parameterized by phase angle)
-- Cup and cap generators (Bell states and effects)
 - Additional rewrite rules (bialgebra, Euler decomposition, Hopf)
 - Better diagram-like notation
 
