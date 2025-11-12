@@ -4,16 +4,16 @@ In-progress formalization of the ZX-calculus in Lean 4.
 
 [The ZX-calculus](https://zxcalculus.com/intro.html) is a graphical language for reasoning about quantum circuits and linear maps.
 
-## Overview
-This project provides:
+## What this project includes
 
 - A dependently-typed abstract syntax tree (AST) for ZX diagrams
 - An equational theory capturing the ZX-calculus rewrite rules
 - Denotational semantics interpreting diagrams as linear maps between Hilbert spaces
+- A thoerem library demonstrating simple verifiablity of ZX diagrams in Lean.
 
 ## Building
 
-Requires [Lean 4 and Mathlib](https://lean-lang.org/install/). Build with in this directory:
+Requires [Lean 4 and Mathlib](https://lean-lang.org/install/). Build in this directory:
 
 ```bash
 lake build
