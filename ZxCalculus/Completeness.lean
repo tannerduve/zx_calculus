@@ -2,7 +2,7 @@ import ZxCalculus.DenotationalSemantics
 import ZxCalculus.RewriteTerm
 
 /--
-Soundness theorem: For any ZX diagrams `A` and `B`, if `A` and `B` are equivalent under the rewrite rules, then the represent the same matrix
+Soundness theorem: For any ZX diagrams `A` and `B`, if `A` and `B` are equivalent under the rewrite rules, then they represent the same matrix
 -/
 theorem soundness {n m : ℕ} (A B : ZxTerm n m) (equiv : ZxEquiv A B) : interp A = interp B := sorry
 
