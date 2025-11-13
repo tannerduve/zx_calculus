@@ -299,12 +299,26 @@ scoped[Zx] infixl:70 " ⊗ₗ " => tensLin
 end ZxCalcNotation
 open scoped Zx
 
+/-- Iterated tensor product of a linear map with itself k times -/
+def iterTens {n m : ℕ} (A : LinMap n m) : (k : ℕ) → LinMap (k * n) (k * m)
+  | 0 => by simpa [Nat.zero_mul] using (1 : LinMap 0 0)
+  | 1 => by simpa [Nat.one_mul] using A
+  | k + 1 => by simpa [Nat.succ_mul, Nat.add_comm] using (A ⊗ₗ iterTens A k)
+
+/-- Cast LinMap n m to LinMap (0 + n) (0 + m) -/
+def linMapAddZeroLeft {n m : ℕ} (A : LinMap n m) : LinMap (0 + n) (0 + m) :=
+  by simpa [LinMap, Nat.zero_add] using A
+
+@[simp] lemma linMapAddZeroLeft_unfold {n m : ℕ} (A : LinMap n m) (i j) :
+  linMapAddZeroLeft A i j = A i j := by
+  simp [linMapAddZeroLeft]
+  sorry
+
 @[simp] lemma tensLin_empty_left {n m} (A : LinMap n m) :
-  ((1 : LinMap 0 0) ⊗ₗ A)
-    = (by simpa [LinMap, Nat.zero_add] using A : LinMap (0 + n) (0 + m)) := by
+  ((1 : LinMap 0 0) ⊗ₗ A) = linMapAddZeroLeft A := by
   ext i j
   simp [tensLin, Matrix.reindex, Matrix.of_apply,
-        Matrix.kronecker, Matrix.kroneckerMap, Nat.zero_add, Matrix.one_apply]
+        Matrix.kronecker, Matrix.kroneckerMap, Nat.zero_add, Matrix.one_apply, linMapAddZeroLeft]
   sorry
 
 @[simp] lemma tensLin_empty_right {n m} (A : LinMap n m) :
@@ -312,16 +326,36 @@ open scoped Zx
   ext i j
   simp [tensLin, Matrix.reindex, Matrix.of_apply, Matrix.kronecker, Matrix.kroneckerMap,
         Nat.add_zero]
-  sorry
+  -- Since the identity matrix has 1s on the diagonal and 0s elsewhere, the only non-zero terms in the sum are when the indices match.
+  simp [Matrix.one_apply, Fin.val_add, Fin.val_mul, Fin.ext_iff];
+  -- Since the indices are just rearranged, the equality holds.
+  congr
+  all_goals generalize_proofs at *;
+  · -- Since the Fin type is essentially a natural number with a bound, the division and modulo operations should just give the same result as the original Fin. So the equality should hold by definition.
+    ext; simp [Fin.ext_iff, Fin.val_add, Fin.val_mul];
+    congr! 1;
+    · ring;
+    · norm_num at *;
+  · ext ; simp [ Fin.ext_iff, Fin.val_add, Fin.val_mul ];
+    grind
 
+/-- Cast LinMap (n₁ + n₂ + n₃) (m₁ + m₂ + m₃) between association forms -/
+def linMapAssoc {n₁ m₁ n₂ m₂ n₃ m₃ : ℕ} (A : LinMap (n₁ + (n₂ + n₃)) (m₁ + (m₂ + m₃))) :
+    LinMap (n₁ + n₂ + n₃) (m₁ + m₂ + m₃) :=
+  by simpa [LinMap, add_assoc] using A
+
+/-- The helper equals the explicit cast -/
+@[simp] lemma linMapAssoc_eq_cast {n₁ m₁ n₂ m₂ n₃ m₃ : ℕ}
+    (A : LinMap (n₁ + (n₂ + n₃)) (m₁ + (m₂ + m₃))) :
+  linMapAssoc A = (Nat.add_assoc n₁ n₂ n₃ ▸ Nat.add_assoc m₁ m₂ m₃ ▸ A : LinMap (n₁ + n₂ + n₃) (m₁ + m₂ + m₃)) := by
+  sorry
 
 @[simp] lemma tensLin_assoc {n₁ m₁ n₂ m₂ n₃ m₃}
   (A : LinMap n₁ m₁) (B : LinMap n₂ m₂) (C : LinMap n₃ m₃) :
-  ((A ⊗ₗ B) ⊗ₗ C) = (by simpa [LinMap, add_assoc] using (A ⊗ₗ (B ⊗ₗ C)) : LinMap (n₁ + n₂ + n₃) (m₁ + m₂ + m₃)) := by
-  -- reduce to Mathlib's `kronecker_assoc`; reindexing composes
+  ((A ⊗ₗ B) ⊗ₗ C) = linMapAssoc (A ⊗ₗ (B ⊗ₗ C)) := by
   ext i j
   simp [tensLin, Matrix.reindex, Matrix.of_apply, Matrix.kronecker, Matrix.kroneckerMap,
-        Equiv.prodAssoc, mul_assoc]
+        Equiv.prodAssoc, linMapAssoc]
   sorry
 
 /--
@@ -335,13 +369,3 @@ def interp {n m : ℕ} : ZxTerm n m → LinMap n m
   | .gen g => interpGen g
   | f ; g => interp g * interp f  -- Matrix multiplication (note order reversal)
   | f ⊗ g => interp f ⊗ₗ interp g
-
-/-- The syntactic dagger operation corresponds to matrix conjugate transpose (adjoint) -/
-theorem dagger_adjoint_property {n m : ℕ} (d : ZxTerm n m) :
-  interp (d†) = (interp d)ᴴ := by
-  sorry
-
-/-- Alternative formulation: dagger satisfies the adjoint property via inner products -/
-theorem dagger_adjoint_property' {n m : ℕ} (d : ZxTerm n m) (x : Qubits n) (y : Qubits m) :
-  (y)ᴴ * (interp d * x) = (interp (d†) * y)ᴴ * x := by
-  sorry

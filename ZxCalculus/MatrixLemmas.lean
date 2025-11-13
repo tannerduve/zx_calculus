@@ -25,6 +25,75 @@ open scoped Zx
 
 noncomputable section
 
+/-! ### Dagger properties -/
+
+/-- Helper: conjugate of phase exponential for Z-spider dagger -/
+lemma dagger_Z_phase (α : ℚ) :
+    Complex.exp (Complex.I * ↑(↑(-α) * Real.pi)) =
+    star (Complex.exp (Complex.I * ↑(↑α * Real.pi))) := by
+  sorry
+
+/-- Helper: conjugate of phase exponential for X-spider dagger -/
+lemma dagger_X_phase (α : ℚ) :
+    Complex.exp (Complex.I * ↑(↑(-α) * Real.pi)) =
+    star (Complex.exp (Complex.I * ↑(↑α * Real.pi))) := by sorry
+
+/--
+The dagger operation † on ZX diagrams is the graphical adjoint operator.
+
+Formally: For a ZX diagram d representing a linear map A : ℂ^(2^n) → ℂ^(2^m),
+the dagger d† represents the adjoint map A† : ℂ^(2^m) → ℂ^(2^n) satisfying
+⟨Ax, y⟩ = ⟨x, A†y⟩ for all x, y.
+-/
+theorem dagger_adjoint_property {n m : ℕ} (d : ZxTerm n m) :
+  interp (d†) = (interp d)ᴴ := by
+  induction d
+  · case gen k l g =>
+    simp only [dagger, interp]
+    induction g
+    · case empty =>
+      simp only [Nat.pow_zero, interp, interpGen]; simp
+    · case id =>
+      simp only [Nat.reducePow, interp, interpGen]; simp
+    · case swap i j =>
+      simp only [interp, interpGen, swap_gen]; aesop
+    · case H =>
+      simp only [Nat.reducePow, interp, interpGen, ketPlus, bra0, ketMinus, bra1,
+      ket0, ket1, basisVector]
+      -- Need to show Hadamard matrix is self-adjoint
+      ext i j
+      fin_cases i <;> fin_cases j <;> {
+        simp only [Matrix.add_apply, Matrix.mul_apply, Matrix.conjTranspose_apply,
+                   Matrix.sub_apply, Matrix.of_apply, Finset.sum_fin_eq_sum_range,
+                   Finset.sum_range_one, Fin.zero_eta]
+        norm_num
+      }
+    · case Z α i j =>
+      simp only [interp, interpGen]
+      -- Conjugate transpose distributes over addition and scalar multiplication
+      rw [Matrix.conjTranspose_add, Matrix.conjTranspose_smul]
+      -- Use outer product adjoint property: (|a⟩⟨b|)ᴴ = |b⟩⟨a|
+      simp only [Matrix.conjTranspose_mul, Matrix.conjTranspose_conjTranspose]
+      -- Simplify the phase: star(e^(iαπ)) = e^(-iαπ)
+      congr 1
+      rw [dagger_Z_phase]
+    · case X α i j =>
+      simp only [interp, interpGen]
+      rw [Matrix.conjTranspose_add, Matrix.conjTranspose_smul]
+      simp only [Matrix.conjTranspose_mul, Matrix.conjTranspose_conjTranspose]
+      congr 1
+      rw [dagger_X_phase]
+    · case cup =>
+      simp only [interp, interpGen]; aesop
+    · case cap =>
+      simp only [interp, interpGen, ket00, bra00, ket11, bra11, basisVector];
+      aesop
+  · case comp i j k A B ih₁ ih₂ =>
+    simp only [dagger, interp, conjTranspose_mul]
+    rw [← ih₁, ← ih₂]
+  · case tens n₁ m₁ n₂ m₂ A B ih₁ ih₂ =>
+    simp only [dagger, interp, ih₁, ih₂, tensLin]; aesop
+
 /-! ### Basic Hadamard Properties -/
 
 /-- The Hadamard gate maps |0⟩ to |+⟩ -/
@@ -143,20 +212,18 @@ lemma ketMinus_def : ketMinus = ket0 - ket1 := rfl
 
 /-! ### tensor_pow Interpretation -/
 
-/-- Interpretation of tensor_pow as iterated tensor product -/
-lemma tensor_pow_interp {n m : ℕ} (d : ZxTerm n m) : ∀ (k : ℕ),
-    interp (tensor_pow d k) = sorry -- iterated ⊗ₗ of interp d
-    := by
-  intro k
+/-- Interpretation of tensor_pow distributes over iterTens -/
+lemma tensor_pow_interp {n m : ℕ} (d : ZxTerm n m) (k : ℕ) :
+    interp (tensor_pow d k) = iterTens (interp d) k := by
   induction k with
   | zero => sorry
   | succ k ih => sorry
 
 /-- Specific case: interpretation of tensor_pow H n -/
 lemma tensor_pow_H_interp (n : ℕ) :
-    interp (tensor_pow H n) = sorry -- (H ⊗ H ⊗ ... ⊗ H) n times
-    := by
-  sorry
+    interp (tensor_pow H n) = iterTens hadamardMatrix n := by
+  rw [tensor_pow_interp]
+  simp [H, interp, interpGen, hadamard_eq_interpGen]
 
 /-! ### Phase Exponential Properties -/
 
@@ -189,34 +256,22 @@ lemma conjTranspose_add {idx₁ idx₂ : Type*} (A B : Matrix idx₁ idx₂ ℂ)
   ext i j
   simp [Matrix.conjTranspose_apply, Matrix.add_apply]
 
-/-! ### Color Change Helper Lemmas -/
+/-! ### Pi Copy Helper Definitions -/
 
-/-- Key lemma for color change Z: H^⊗n (Z spider) H^⊗m = X spider
-    Note: We need to work with the actual types from the rewrite rules, which use casts -/
-lemma color_change_Z_matrix (α : ℚ) (n m : ℕ) :
-    interp (((tensor_pow H n) ; (by simpa [Nat.add_zero] using (Z α n m))) ; (tensor_pow H m))
-    = interp (by simpa [Nat.add_zero] using (X α n m)) := by
-  sorry
+/-- Cast X 1 1 1 ⊗ tensor_pow id k to the right type for composition -/
+def x_pi_id_tens (k : ℕ) : ZxTerm (1 + k) (1 + k) :=
+  by simpa [Nat.mul_one] using ((X 1 1 1).tens (tensor_pow id k))
 
-/-- Key lemma for color change X: H^⊗n (X spider) H^⊗m = Z spider
-    Note: We need to work with the actual types from the rewrite rules, which use casts -/
-lemma color_change_X_matrix (α : ℚ) (n m : ℕ) :
-    interp (((tensor_pow H n) ; (by simpa [Nat.add_zero] using (X α n m))) ; (tensor_pow H m))
-    = interp (by simpa [Nat.add_zero] using (Z α n m)) := by
-  sorry
+/-- Cast Z 1 1 1 ⊗ tensor_pow id k to the right type for composition -/
+def z_pi_id_tens (k : ℕ) : ZxTerm (1 + k) (1 + k) :=
+  by simpa [Nat.mul_one] using ((Z 1 1 1).tens (tensor_pow id k))
 
-/-! ### Pi Copy Helper Lemmas -/
+/-- Cast tensor_pow (X 1 1 1) n to the right type for composition -/
+def x_pi_pow (n : ℕ) : ZxTerm n n :=
+  by simpa [Nat.mul_one] using (tensor_pow (X 1 1 1) n)
 
-/-- Helper for z_pi_copy: X-π on one wire plus identity on k wires, then Z-α copier -/
-lemma z_pi_copy_matrix (α : ℚ) (k n : ℕ) :
-    interp (((X 1 1 1).tens (by simpa [Nat.mul_one] using tensor_pow id k)) ; (Z α (1 + k) n)) =
-    interp ((Z (-α) (1 + k) n) ; (by simpa [Nat.mul_one] using tensor_pow (X 1 1 1) n)) := by
-  sorry
-
-/-- Helper for x_pi_copy: Z-π on one wire plus identity on k wires, then X-α copier -/
-lemma x_pi_copy_matrix (α : ℚ) (k n : ℕ) :
-    interp (((Z 1 1 1).tens (by simpa [Nat.mul_one] using tensor_pow id k)) ; (X α (1 + k) n)) =
-    interp ((X (-α) (1 + k) n) ; (by simpa [Nat.mul_one] using tensor_pow (Z 1 1 1) n)) := by
-  sorry
+/-- Cast tensor_pow (Z 1 1 1) n to the right type for composition -/
+def z_pi_pow (n : ℕ) : ZxTerm n n :=
+  by simpa [Nat.mul_one] using (tensor_pow (Z 1 1 1) n)
 
 end
