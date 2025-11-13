@@ -1,4 +1,5 @@
 import Mathlib.Data.Matrix.Kronecker
+import Mathlib.Data.Matrix.Diagonal
 import Mathlib.Data.Complex.Basic
 import ZxCalculus.AST
 
@@ -68,11 +69,13 @@ def pow_tens (v : Qubits 1) : (n : ℕ) → Qubits n
   | 0 => basisVector 0 0  -- Empty state (1×1 identity)
   | 1 => v
   | n+1 =>
-      let prev := pow_tens v n
       -- Kronecker product, then reindex from (Fin 2 × Fin 2^n) to Fin 2^(n+1)
       Matrix.of fun i _ =>
         let i_split := finProdFinEquiv.symm (i.cast (by ring))
-        kronecker v prev i_split 0
+        kronecker v (pow_tens v n) i_split 0
+
+@[simp] lemma pow_tens_zero (v : Qubits 1) : pow_tens v 0 = basisVector 0 0 := rfl
+@[simp] lemma pow_tens_one (v : Qubits 1) : pow_tens v 1 = v := rfl
 
 /-! #### Computational Basis (Z-basis)
 
@@ -281,6 +284,46 @@ def interpGen {n m : ℕ} (g : Generator n m) : LinMap n m :=
   | .cup => ket00 + ket11  -- Bell state (|00⟩ + |11⟩)
   | .cap => bra00 + bra11  -- Bell effect (⟨00| + ⟨11|)
 
+open scoped Kronecker
+
+/-- Kronecker on `LinMap`, reindexed to `LinMap (n₁+n₂) (m₁+m₂)`. -/
+def tensLin {n₁ m₁ n₂ m₂}
+  (A : LinMap n₁ m₁) (B : LinMap n₂ m₂) : LinMap (n₁ + n₂) (m₁ + m₂) :=
+  Matrix.reindex
+    (finProdFinEquiv.trans (Equiv.cast (by ring_nf)))
+    (finProdFinEquiv.trans (Equiv.cast (by ring_nf)))
+    (A ⊗ₖ B)
+
+namespace ZxCalcNotation
+scoped[Zx] infixl:70 " ⊗ₗ " => tensLin
+end ZxCalcNotation
+open scoped Zx
+
+@[simp] lemma tensLin_empty_left {n m} (A : LinMap n m) :
+  ((1 : LinMap 0 0) ⊗ₗ A)
+    = (by simpa [LinMap, Nat.zero_add] using A : LinMap (0 + n) (0 + m)) := by
+  ext i j
+  simp [tensLin, Matrix.reindex, Matrix.of_apply,
+        Matrix.kronecker, Matrix.kroneckerMap, Nat.zero_add, Matrix.one_apply]
+  sorry
+
+@[simp] lemma tensLin_empty_right {n m} (A : LinMap n m) :
+  (A ⊗ₗ (1 : LinMap 0 0)) = A := by
+  ext i j
+  simp [tensLin, Matrix.reindex, Matrix.of_apply, Matrix.kronecker, Matrix.kroneckerMap,
+        Nat.add_zero]
+  sorry
+
+
+@[simp] lemma tensLin_assoc {n₁ m₁ n₂ m₂ n₃ m₃}
+  (A : LinMap n₁ m₁) (B : LinMap n₂ m₂) (C : LinMap n₃ m₃) :
+  ((A ⊗ₗ B) ⊗ₗ C) = (by simpa [LinMap, add_assoc] using (A ⊗ₗ (B ⊗ₗ C)) : LinMap (n₁ + n₂ + n₃) (m₁ + m₂ + m₃)) := by
+  -- reduce to Mathlib's `kronecker_assoc`; reindexing composes
+  ext i j
+  simp [tensLin, Matrix.reindex, Matrix.of_apply, Matrix.kronecker, Matrix.kroneckerMap,
+        Equiv.prodAssoc, mul_assoc]
+  sorry
+
 /--
 Recursively interpret a composite ZX diagram as a matrix.
 
@@ -291,13 +334,7 @@ Recursively interpret a composite ZX diagram as a matrix.
 def interp {n m : ℕ} : ZxTerm n m → LinMap n m
   | .gen g => interpGen g
   | f ; g => interp g * interp f  -- Matrix multiplication (note order reversal)
-  | f ⊗ g =>
-    -- Kronecker product, with reindexing from Fin(2^n) to Fin(2^n₁) × Fin(2^n₂)
-    Matrix.of fun i j =>
-      let i_prod := finProdFinEquiv.symm (i.cast (by ring))
-      let j_prod := finProdFinEquiv.symm (j.cast (by ring))
-      kronecker (interp f) (interp g) i_prod j_prod
-
+  | f ⊗ g => interp f ⊗ₗ interp g
 
 /-- The syntactic dagger operation corresponds to matrix conjugate transpose (adjoint) -/
 theorem dagger_adjoint_property {n m : ℕ} (d : ZxTerm n m) :

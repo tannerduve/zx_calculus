@@ -122,16 +122,47 @@ inductive ZxEquiv : {n m : ℕ} → ZxTerm n m → ZxTerm n m → Prop
     (((tensor_pow H n).comp (by simpa [Nat.add_zero] using (X α n m))).comp (tensor_pow H m))
     (by simpa [Nat.add_zero] using (Z α n m))
 
--- π-copy rules: spiders with phase π can "copy through" opposite-color spiders with phase negation
-/-- π-copy for X through Z: an X-π spider commutes with a Z spider, negating the phase -/
-| z_pi_copy_simple : ∀ {α}, ZxEquiv
-    ((X 1 1 1).comp (Z α 1 1))
-    ((Z (-α) 1 1).comp (X 1 1 1))
-
-/-- π-copy for Z through X: a Z-π spider commutes with an X spider, negating the phase -/
-| x_pi_copy_simple : ∀ {α}, ZxEquiv
-    ((Z 1 1 1).comp (X α 1 1))
-    ((X (-α) 1 1).comp (Z 1 1 1))
+-- π-copy rules: X-π copies through Z-spiders (and vice versa) with phase negation
+-- For now, leave these as simpler versions with sorry placeholders
+-- The full multi-wire version requires more careful type handling
+/-- π-copy for X through Z -/
+| z_pi_copy :
+    ∀ {k n : ℕ} (α : ℚ),
+      ZxEquiv
+        (  -- (Xπ ⊗ id^{⊗ k}) ; Zα
+          (by
+            -- X 1 1 1 ⊗ tensor_pow id k : ZxTerm (1 + k) (1 + k)
+            simpa [Nat.mul_one]
+              using ((X 1 1 1).tens (tensor_pow id k))
+          ); (Z α (1 + k) n)
+        )
+        (  -- Z_{-α} ; (Xπ)^{⊗ n}
+          (Z (-α) (1 + k) n);
+            (by
+              -- tensor_pow (X 1 1 1) n : ZxTerm n n
+              simpa [Nat.mul_one]
+                using (tensor_pow (X 1 1 1) n)
+            )
+        )
+/-- π-copy for Z through X: general multi-wire version -/
+| x_pi_copy :
+    ∀ {k n : ℕ} (α : ℚ),
+      ZxEquiv
+        (  -- (Zπ ⊗ id^{⊗ k}) ; Xα
+          (by
+            -- Z 1 1 1 ⊗ tensor_pow id k : ZxTerm (1 + k) (1 + k)
+            simpa [Nat.mul_one]
+              using ((Z 1 1 1).tens (tensor_pow id k))
+          ); (X α (1 + k) n)
+        )
+        (  -- X_{-α} ; (Zπ)^{⊗ n}
+          (X (-α) (1 + k) n);
+            (by
+              -- tensor_pow (Z 1 1 1) n : ZxTerm n n
+              simpa [Nat.mul_one]
+                using (tensor_pow (Z 1 1 1) n)
+            )
+        )
 
 /-- Phase periodicity: Z-spiders with phases differing by 2 (i.e., 2π) are equivalent -/
 | z_phase_period : ∀ {α n m}, ZxEquiv (Z (α + 2) n m) (Z α n m)
