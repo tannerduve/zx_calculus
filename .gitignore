@@ -1,16 +1,5 @@
-# Aristotle virtual environment and data
-aristotle/venv/
-aristotle/__pycache__/
-aristotle/*.pyc
-aristotle/aristotle_data.json
-
-# Aristotle generated proof files
-aristotle/*_proved.lean
-aristotle/*_aristotle*.lean
-
-# Aristotle setup files (generated from script)
-prove.sh
-README_ARISTOTLE.md
+# Aristotle - ignore entire folder
+aristotle/
 
 # Lean build artifacts
 build/
