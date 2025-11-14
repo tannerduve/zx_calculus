@@ -1,35 +1,111 @@
-name: Tests
+name: CI Tests
 
 on:
   push:
-    branches:
-      - main
-      - seun/cleanup
+    branches: [ main, master ]
   pull_request:
-    branches:
-      - main
+    branches: [ main, master ]
 
 jobs:
-  test:
+  lean-build:
+    name: Build Lean Project
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Install Lean
         uses: leanprover/lean-action@v1
         with:
-          build-args: ""
+          lake-build: ZxCalculus
+      
+      - name: Build tests
+        run: lake build tests
+      
+      - name: Check for compilation errors
+        run: lake build --verbose
 
-      - name: Build main library
-        run: lake build
+  parser-tests:
+    name: Parser Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Lean
+        uses: leanprover/lean-action@v1
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      
+      - name: Install Python dependencies
+        working-directory: py
+        run: uv sync
+      
+      - name: Run parser integration tests
+        run: bash scripts/test_parser.sh
+      
+      - name: Upload test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-outputs
+          path: |
+            py/*.qgraph
+            scripts/golden/*.qgraph
 
-      - name: Test - Fusion
-        run: lake build tests.Fusion
-        
-      - name: Test - Identity
-        run: lake build tests.Identity
+  rewrite-tests:
+    name: ZX Rewrite Rule Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Lean
+        uses: leanprover/lean-action@v1
+      
+      - name: Build rewrite tests
+        run: |
+          lake build tests.Structural
+          lake build tests.Fusion
+          lake build tests.XFusion
+          lake build tests.ColorChange
+          lake build tests.Identity
+      
+      - name: Check for sorry in tests
+        run: |
+          echo "Checking for incomplete proofs (sorry) in test files..."
+          if grep -r "sorry" tests/*.lean; then
+            echo "Warning: Some tests contain 'sorry' and are incomplete"
+            echo "This is allowed but should be completed eventually"
+            exit 0
+          else
+            echo "All tests are complete!"
+          fi
 
-      - name: All tests passed
-        run: echo "✓ All tests passed successfully!"
+  status-check:
+    name: All Tests Status
+    runs-on: ubuntu-latest
+    needs: [lean-build, parser-tests, rewrite-tests]
+    if: always()
+    
+    steps:
+      - name: Check if all jobs passed
+        run: |
+          if [ "${{ needs.lean-build.result }}" != "success" ] || \
+             [ "${{ needs.parser-tests.result }}" != "success" ] || \
+             [ "${{ needs.rewrite-tests.result }}" != "success" ]; then
+            echo "Some tests failed!"
+            exit 1
+          fi
+          echo "All tests passed!"

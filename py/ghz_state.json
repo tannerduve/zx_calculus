@@ -1,0 +1,124 @@
+{
+  "name": "ghzState3",
+  "vertices": {
+    "v0": {
+      "type": "BOUNDARY",
+      "phase": "0",
+      "qubit": 0,
+      "row": 0
+    },
+    "v1": {
+      "type": "BOUNDARY",
+      "phase": "0",
+      "qubit": 1,
+      "row": 0
+    },
+    "v2": {
+      "type": "BOUNDARY",
+      "phase": "0",
+      "qubit": 2,
+      "row": 0
+    },
+    "v3": {
+      "type": "Z",
+      "phase": "0",
+      "qubit": 0,
+      "row": 1
+    },
+    "v4": {
+      "type": "X",
+      "phase": "0",
+      "qubit": 1,
+      "row": 2
+    },
+    "v5": {
+      "type": "Z",
+      "phase": "0",
+      "qubit": 0,
+      "row": 2
+    },
+    "v6": {
+      "type": "X",
+      "phase": "0",
+      "qubit": 2,
+      "row": 3
+    },
+    "v7": {
+      "type": "Z",
+      "phase": "0",
+      "qubit": 0,
+      "row": 3
+    },
+    "v8": {
+      "type": "BOUNDARY",
+      "phase": "0",
+      "qubit": 0,
+      "row": 4
+    },
+    "v9": {
+      "type": "BOUNDARY",
+      "phase": "0",
+      "qubit": 1,
+      "row": 4
+    },
+    "v10": {
+      "type": "BOUNDARY",
+      "phase": "0",
+      "qubit": 2,
+      "row": 4
+    }
+  },
+  "edges": [
+    [
+      "v0",
+      "v3"
+    ],
+    [
+      "v1",
+      "v4"
+    ],
+    [
+      "v2",
+      "v6"
+    ],
+    [
+      "v3",
+      "v5"
+    ],
+    [
+      "v4",
+      "v5"
+    ],
+    [
+      "v4",
+      "v9"
+    ],
+    [
+      "v5",
+      "v7"
+    ],
+    [
+      "v6",
+      "v7"
+    ],
+    [
+      "v6",
+      "v10"
+    ],
+    [
+      "v7",
+      "v8"
+    ]
+  ],
+  "inputs": [
+    "v0",
+    "v1",
+    "v2"
+  ],
+  "outputs": [
+    "v10",
+    "v8",
+    "v9"
+  ],
+  "num_qubits": 3
+}
