@@ -12,7 +12,6 @@ Tests the full pipeline:
 """
 
 import sys
-import json
 import subprocess
 from pathlib import Path
 from typing import Tuple, Optional
@@ -40,60 +39,70 @@ class RoundtripTester:
         self.test_dir = Path(tempfile.mkdtemp(prefix="roundtrip_"))
         self.results = []
         
-    def create_test_circuits(self):
-        """Create a suite of test circuits"""
-        circuits = {}
-        
-        # 1. Single Hadamard
+    # ========================================================================
+    # Individual Circuit Builders
+    # ========================================================================
+    
+    def circuit_identity(self):
+        """Identity: just a wire (1→1)"""
+        c = zx.Circuit(1)
+        return c
+    
+    def circuit_hadamard(self):
+        """Single Hadamard gate"""
         c = zx.Circuit(1)
         c.add_gate("HAD", 0)
-        circuits["hadamard"] = c
-        
-        # 2. Identity (just a wire)
-        c = zx.Circuit(1)
-        circuits["identity"] = c
-        
-        # 3. Z-phase gate
+        return c
+    
+    def circuit_z_phase(self):
+        """Z-phase gate (π/4)"""
         c = zx.Circuit(1)
         c.add_gate("ZPhase", 0, 0.25)  # π/4
-        circuits["z_phase"] = c
-        
-        # 4. X-phase gate
+        return c
+    
+    def circuit_x_phase(self):
+        """X-phase gate (π/2)"""
         c = zx.Circuit(1)
         c.add_gate("XPhase", 0, 0.5)  # π/2
-        circuits["x_phase"] = c
-        
-        # 5. H ; Z composition
+        return c
+    
+    def circuit_h_z_comp(self):
+        """Composition: H ; Z(π/2)"""
         c = zx.Circuit(1)
         c.add_gate("HAD", 0)
         c.add_gate("ZPhase", 0, 0.5)
-        circuits["h_z_comp"] = c
-        
-        # 6. Two qubits: H on first, Z on second
-        c = zx.Circuit(2)
-        c.add_gate("HAD", 0)
-        c.add_gate("ZPhase", 1, 0.25)
-        circuits["two_qubit_parallel"] = c
-        
-        # 7. CNOT (as ZX diagram)
-        c = zx.Circuit(2)
-        c.add_gate("CNOT", 0, 1)
-        circuits["cnot"] = c
-        
-        # 8. Bell state preparation
-        c = zx.Circuit(2)
-        c.add_gate("HAD", 0)
-        c.add_gate("CNOT", 0, 1)
-        circuits["bell_state"] = c
-        
-        # 9. Three Hadamards in sequence
+        return c
+    
+    def circuit_three_hadamards(self):
+        """Three Hadamards in sequence (should equal H)"""
         c = zx.Circuit(1)
         c.add_gate("HAD", 0)
         c.add_gate("HAD", 0)
         c.add_gate("HAD", 0)
-        circuits["three_hadamards"] = c
-        
-        # 10. Simple Z spider (2-ary)
+        return c
+    
+    def circuit_two_qubit_parallel(self):
+        """Two qubits: H ⊗ Z(π/4)"""
+        c = zx.Circuit(2)
+        c.add_gate("HAD", 0)
+        c.add_gate("ZPhase", 1, 0.25)
+        return c
+    
+    def circuit_cnot(self):
+        """CNOT gate (entangling)"""
+        c = zx.Circuit(2)
+        c.add_gate("CNOT", 0, 1)
+        return c
+    
+    def circuit_bell_state(self):
+        """Bell state preparation: H ; CNOT"""
+        c = zx.Circuit(2)
+        c.add_gate("HAD", 0)
+        c.add_gate("CNOT", 0, 1)
+        return c
+    
+    def circuit_simple_z_spider(self):
+        """Simple Z spider (2-ary, custom graph)"""
         g = zx.Graph()
         v0 = g.add_vertex(0, 0, 0)  # Input boundary
         v1 = g.add_vertex(1, 1, 0)  # Z spider
@@ -102,9 +111,22 @@ class RoundtripTester:
         g.add_edge((v1, v2))
         g.set_inputs([v0])
         g.set_outputs([v2])
-        circuits["simple_z_spider"] = g
-        
-        return circuits
+        return g
+    
+    def get_all_circuits(self):
+        """Get all test circuits as a dictionary"""
+        return {
+            "identity": self.circuit_identity(),
+            "hadamard": self.circuit_hadamard(),
+            "z_phase": self.circuit_z_phase(),
+            "x_phase": self.circuit_x_phase(),
+            "h_z_comp": self.circuit_h_z_comp(),
+            "three_hadamards": self.circuit_three_hadamards(),
+            "two_qubit_parallel": self.circuit_two_qubit_parallel(),
+            "cnot": self.circuit_cnot(),
+            "bell_state": self.circuit_bell_state(),
+            "simple_z_spider": self.circuit_simple_z_spider(),
+        }
     
     def export_pyzx_circuit(self, circuit, name: str) -> Path:
         """Export PyZX circuit/graph to .qgraph file"""
@@ -267,7 +289,7 @@ class RoundtripTester:
             print("Creating it now...")
             self.create_lean_script()
         
-        circuits = self.create_test_circuits()
+        circuits = self.get_all_circuits()
         print(f"\nRunning {len(circuits)} tests...")
         
         for name, circuit in circuits.items():
@@ -277,6 +299,40 @@ class RoundtripTester:
         self.print_summary()
         
         return all(r["passed"] for r in self.results)
+    
+    def run_single_test(self, circuit_name: str):
+        """Run a single circuit test by name"""
+        print(f"{BLUE}{'=' * 70}{RESET}")
+        print(f"{BLUE}Testing Single Circuit: {circuit_name}{RESET}")
+        print(f"{BLUE}{'=' * 70}{RESET}")
+        
+        print(f"\nTest directory: {self.test_dir}")
+        print(f"Lean script: {self.lean_script}")
+        
+        if not self.lean_script.exists():
+            print(f"\n{RED}Error:{RESET} Lean script not found: {self.lean_script}")
+            return False
+        
+        # Get the circuit builder method
+        method_name = f"circuit_{circuit_name}"
+        if not hasattr(self, method_name):
+            print(f"\n{RED}Error:{RESET} Unknown circuit: {circuit_name}")
+            print(f"Available circuits: {', '.join(self.get_all_circuits().keys())}")
+            return False
+        
+        circuit = getattr(self, method_name)()
+        result = self.test_circuit(circuit_name, circuit)
+        self.results.append(result)
+        
+        # Print result
+        print(f"\n{BLUE}{'=' * 70}{RESET}")
+        if result["passed"]:
+            print(f"{GREEN}✓ Test passed!{RESET}")
+        else:
+            print(f"{RED}✗ Test failed: {result['error']}{RESET}")
+        print(f"{BLUE}{'=' * 70}{RESET}\n")
+        
+        return result["passed"]
     
     def print_summary(self):
         """Print test summary"""
@@ -343,8 +399,29 @@ def main (args : List String) : IO UInt32 := do
 
 
 def main():
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="PyZX → Lean → PyZX roundtrip tests")
+    parser.add_argument('circuit', nargs='?', help='Test a specific circuit (e.g., hadamard, identity)')
+    parser.add_argument('--list', action='store_true', help='List available circuits')
+    
+    args = parser.parse_args()
+    
     tester = RoundtripTester()
-    success = tester.run_all_tests()
+    
+    if args.list:
+        print("Available circuits:")
+        for name in tester.get_all_circuits().keys():
+            print(f"  - {name}")
+        sys.exit(0)
+    
+    if args.circuit:
+        # Test single circuit
+        success = tester.run_single_test(args.circuit)
+    else:
+        # Test all circuits
+        success = tester.run_all_tests()
+    
     sys.exit(0 if success else 1)
 
 

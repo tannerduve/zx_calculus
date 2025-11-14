@@ -368,18 +368,19 @@ def serializeGenerator {n m : Nat} (g : Generator n m) (col : Int) (startQubit :
     modify fun s => { s with outputWires := swapped }
 
   | .H =>
-    -- Hadamard gate: create H-box vertex
+    -- Hadamard gate: In PyZX, this is represented as a Z-spider with a Hadamard edge
+    -- Create a Z-spider with phase 0
     let vid ← allocVertexId
     addVertex {
       id := vid,
-      vtype := .hbox,
+      vtype := .z,
       phase := 0,
       pos := some (col, startQubit)
     }
-    -- Connect input wire to H-box
+    -- Connect input wire to Z-spider with HADAMARD edge
     if h : inputWires.size ≥ 1 then
-      addEdge { src := inputWires[0], tgt := vid, etype := .simple }
-    -- Output is the H-box
+      addEdge { src := inputWires[0], tgt := vid, etype := .hadamard }
+    -- Output is the Z-spider
     modify fun s => { s with outputWires := #[vid] }
 
   | .Z α n m =>
@@ -433,18 +434,21 @@ def serializeGenerator {n m : Nat} (g : Generator n m) (col : Int) (startQubit :
     addEdge { src := vid1, tgt := vid2, etype := .simple }
     modify fun s => { s with outputWires := #[vid1, vid2] }
 
-/-- Serialize a ZxTerm to QGraph structure -/
-def serializeZxTermAux {n m : Nat} (term : ZxTerm n m) (col : Int) : SerializerM Unit := do
+/-- Serialize a ZxTerm to QGraph structure
+    col: horizontal position
+    startQubit: vertical position offset (which qubit to start at)
+-/
+def serializeZxTermAux {n m : Nat} (term : ZxTerm n m) (col : Int) (startQubit : Int) : SerializerM Unit := do
   match term with
-  | .gen g => serializeGenerator g col 0
+  | .gen g => serializeGenerator g col startQubit
   | .comp A B =>
     -- Serialize A first
-    serializeZxTermAux A col
+    serializeZxTermAux A col startQubit
     -- Outputs of A become inputs of B
     let middleWires ← get <&> (·.outputWires)
     modify fun s => { s with inputWires := middleWires }
-    -- Serialize B after A
-    serializeZxTermAux B (col + 1)
+    -- Serialize B after A (same qubit offset)
+    serializeZxTermAux B (col + 1) startQubit
   | .tens A B =>
     -- Save current input wires
     let currentInputs ← get <&> (·.inputWires)
@@ -454,16 +458,16 @@ def serializeZxTermAux {n m : Nat} (term : ZxTerm n m) (col : Int) : SerializerM
     let inputsA := currentInputs.extract 0 splitPoint
     let inputsB := currentInputs.extract splitPoint currentInputs.size
 
-    -- Serialize A (top)
+    -- Serialize A (top qubits starting at qubit 0)
     let s ← get
     set { s with inputWires := inputsA }
-    serializeZxTermAux A col
+    serializeZxTermAux A col startQubit
     let outputsA ← get <&> (·.outputWires)
 
-    -- Serialize B (bottom)
+    -- Serialize B (bottom qubits starting at qubit splitPoint)
     let s ← get
     set { s with inputWires := inputsB }
-    serializeZxTermAux B col
+    serializeZxTermAux B col (startQubit + splitPoint)
     let outputsB ← get <&> (·.outputWires)
 
     -- Combine outputs
@@ -480,7 +484,7 @@ def serializeToQGraph {n m : Nat} (term : ZxTerm n m) : QGraphData :=
     outputWires := #[]
   }
 
-  let (_, finalState) := (do
+  let ((inputBoundaries, outputBoundaries), finalState) := (do
     -- Create input boundaries (column -1, before gates)
     let mut inputBoundaries : Array Nat := #[]
     for i in [0:n] do
@@ -496,8 +500,8 @@ def serializeToQGraph {n m : Nat} (term : ZxTerm n m) : QGraphData :=
     let s ← get
     set { s with inputWires := inputBoundaries }
 
-    -- Serialize the term (starts at column 0)
-    serializeZxTermAux term 0
+    -- Serialize the term (starts at column 0, qubit 0)
+    serializeZxTermAux term 0 0
 
     -- Create output boundaries (at column 1000, far to the right)
     let mut outputBoundaries : Array Nat := #[]
@@ -518,15 +522,15 @@ def serializeToQGraph {n m : Nat} (term : ZxTerm n m) : QGraphData :=
         if h2 : i < outputBoundaries.size then
           addEdge { src := internalOuts[i], tgt := outputBoundaries[i], etype := .simple }
 
-    return ()
+    return (inputBoundaries, outputBoundaries)
   ).run initialState
 
   {
     version := 2,
     vertices := finalState.vertices,
     edges := finalState.edges,
-    inputs := (List.range n).toArray,
-    outputs := (List.range m).toArray.map (· + n),
+    inputs := inputBoundaries,
+    outputs := outputBoundaries,
     scalar := none
   }
 
@@ -625,20 +629,31 @@ def reconstructZxTermSimple (qgraph : QGraphData) :
     -- Sort gates by column
     let sortedGates := gatesWithPos.qsort (fun a b => a.2 < b.2) |>.map (·.1)
 
+    -- Helper: check if vertex has a Hadamard edge
+    let hasHadamardEdge (vid : Nat) : Bool :=
+      qgraph.edges.any (fun e =>
+        (e.src == vid || e.tgt == vid) && e.etype == .hadamard)
+
     -- Build composition of gates
     let mut circuit : ZxTerm 1 1 := ZxTerm.id
 
     for gate in sortedGates do
       match gate.vtype with
       | .hbox =>
-        -- Hadamard gate
+        -- Explicit H-box vertex
         circuit := circuit ; ZxTerm.H
       | .z =>
-        -- Z-phase gate
-        circuit := circuit ; ZxTerm.Z gate.phase 1 1
+        -- Z-spider: could be a Hadamard if it has phase 0 and a Hadamard edge
+        if gate.phase == 0 && hasHadamardEdge gate.id then
+          circuit := circuit ; ZxTerm.H
+        else
+          circuit := circuit ; ZxTerm.Z gate.phase 1 1
       | .x =>
-        -- X-phase gate
-        circuit := circuit ; ZxTerm.X gate.phase 1 1
+        -- X-spider: could be a Hadamard if it has phase 0 and a Hadamard edge
+        if gate.phase == 0 && hasHadamardEdge gate.id then
+          circuit := circuit ; ZxTerm.H
+        else
+          circuit := circuit ; ZxTerm.X gate.phase 1 1
       | .boundary => continue
 
     return ⟨1, 1, circuit⟩
@@ -669,13 +684,28 @@ def reconstructZxTermSimple (qgraph : QGraphData) :
         | none => false
       ) |>.qsort (fun a b => a.2 < b.2) |>.map (·.1)
 
+      -- Helper: check if vertex has a Hadamard edge
+      let hasHadamardEdge (vid : Nat) : Bool :=
+        qgraph.edges.any (fun e =>
+          (e.src == vid || e.tgt == vid) && e.etype == .hadamard)
+
       -- Build circuit for qubit 0
       let mut circ0 : ZxTerm 1 1 := ZxTerm.id
       for gate in gatesQubit0 do
         match gate.vtype with
         | .hbox => circ0 := circ0 ; ZxTerm.H
-        | .z => circ0 := circ0 ; ZxTerm.Z gate.phase 1 1
-        | .x => circ0 := circ0 ; ZxTerm.X gate.phase 1 1
+        | .z =>
+          -- Z-spider: could be a Hadamard if it has phase 0 and a Hadamard edge
+          if gate.phase == 0 && hasHadamardEdge gate.id then
+            circ0 := circ0 ; ZxTerm.H
+          else
+            circ0 := circ0 ; ZxTerm.Z gate.phase 1 1
+        | .x =>
+          -- X-spider: could be a Hadamard if it has phase 0 and a Hadamard edge
+          if gate.phase == 0 && hasHadamardEdge gate.id then
+            circ0 := circ0 ; ZxTerm.H
+          else
+            circ0 := circ0 ; ZxTerm.X gate.phase 1 1
         | .boundary => continue
 
       -- Build circuit for qubit 1
@@ -683,8 +713,16 @@ def reconstructZxTermSimple (qgraph : QGraphData) :
       for gate in gatesQubit1 do
         match gate.vtype with
         | .hbox => circ1 := circ1 ; ZxTerm.H
-        | .z => circ1 := circ1 ; ZxTerm.Z gate.phase 1 1
-        | .x => circ1 := circ1 ; ZxTerm.X gate.phase 1 1
+        | .z =>
+          if gate.phase == 0 && hasHadamardEdge gate.id then
+            circ1 := circ1 ; ZxTerm.H
+          else
+            circ1 := circ1 ; ZxTerm.Z gate.phase 1 1
+        | .x =>
+          if gate.phase == 0 && hasHadamardEdge gate.id then
+            circ1 := circ1 ; ZxTerm.H
+          else
+            circ1 := circ1 ; ZxTerm.X gate.phase 1 1
         | .boundary => continue
 
       return ⟨2, 2, circ0 ⊗ circ1⟩
@@ -724,7 +762,9 @@ def qgraphToJson (qgraph : QGraphData) : Json :=
     Json.arr #[
       Lean.toJson (e.src : Int),
       Lean.toJson (e.tgt : Int),
-      Lean.toJson (match e.etype with | .simple => (1 : Int) | .hadamard => (2 : Int))
+      Lean.toJson (match e.etype with
+        | .simple => (1 : Int)
+        | .hadamard => (2 : Int))
     ]
 
   let inputsJson := qgraph.inputs.map (fun (i : Nat) => Lean.toJson (i : Int))
