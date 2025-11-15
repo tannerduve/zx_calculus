@@ -1,14 +1,14 @@
-import ZxCalculus.Parser.QGraph
+import ZxCalculus.Format.QGraph.Basic
 import ZxCalculus.DenotationalSemantics
 
 /-!
-# Parser Tests
+# QGraph Format Tests
 
 End-to-end tests for parsing .qgraph files and verifying equivalences.
 -/
 
 open Lean (Json)
-open ZxCalculus.Parser
+open ZxCalculus.Format.QGraph
 
 /-! ## Basic Parsing Tests -/
 
@@ -30,7 +30,7 @@ def testParseSimple : IO Unit := do
   match Json.parse jsonStr with
   | .error e => IO.println s!"Parse failed: {e}"
   | .ok json =>
-    match parseQGraph json with
+    match parse json with
     | .error e => IO.println s!"QGraph parse failed: {e}"
     | .ok qgraph => do
       IO.println "✓ Successfully parsed simple qgraph"
@@ -43,7 +43,7 @@ def testParseSimple : IO Unit := do
 /-! ## Validation Functions -/
 
 /-- Validate that a QGraph has the expected structure -/
-def validateQGraph (name : String) (qgraph : QGraphData) : IO Bool := do
+def validateQGraph (name : String) (qgraph : Data) : IO Bool := do
   IO.println s!"  Testing: {name}"
 
   -- Basic structure checks
@@ -78,8 +78,8 @@ def validateQGraph (name : String) (qgraph : QGraphData) : IO Bool := do
 
   return true
 
-/-- Compare two QGraphData structures for equality -/
-def compareQGraphs (name : String) (qgraph1 qgraph2 : QGraphData) : IO Bool := do
+/-- Compare two Data structures for equality -/
+def compareQGraphs (name : String) (qgraph1 qgraph2 : Data) : IO Bool := do
   IO.println s!"  Comparing: {name} against golden copy"
 
   if qgraph1.inputs.size != qgraph2.inputs.size then
@@ -126,7 +126,7 @@ def testLoadBellState : IO Unit := do
   IO.println "Loading bell_state.qgraph..."
 
   try
-    let qgraph ← parseQGraphFile path
+    let qgraph ← parseFile path
     IO.println s!"✓ Successfully parsed bell_state.qgraph"
     IO.println s!"  Inputs: {qgraph.inputs.size} qubits"
     IO.println s!"  Outputs: {qgraph.outputs.size} qubits"
@@ -144,7 +144,7 @@ def testLoadBellState : IO Unit := do
       IO.println s!"    v{v.id}: {typeStr}"
 
     -- Try reconstruction
-    match reconstructZxTermSimple qgraph with
+    match reconstruct qgraph with
     | .error e => IO.println s!"\n  Reconstruction not yet implemented: {e}"
     | .ok ⟨n, m, _⟩ =>
       IO.println s!"\n✓ Reconstructed as ZxTerm {n} {m}"
@@ -160,7 +160,7 @@ def testLoadCNOT : IO Unit := do
   IO.println "\nLoading cnot.qgraph..."
 
   try
-    let qgraph ← parseQGraphFile path
+    let qgraph ← parseFile path
     IO.println s!"✓ Successfully parsed cnot.qgraph"
     IO.println s!"  Inputs: {qgraph.inputs.size} qubits"
     IO.println s!"  Outputs: {qgraph.outputs.size} qubits"
@@ -191,7 +191,7 @@ def testLoadGHZ : IO Unit := do
   IO.println "\nLoading ghz_state.qgraph..."
 
   try
-    let qgraph ← parseQGraphFile path
+    let qgraph ← parseFile path
     IO.println s!"✓ Successfully parsed ghz_state.qgraph"
     IO.println s!"  Inputs: {qgraph.inputs.size} qubits"
     IO.println s!"  Outputs: {qgraph.outputs.size} qubits"
@@ -213,7 +213,7 @@ def testFile (path : System.FilePath) (goldenPath? : Option System.FilePath := n
 
   try
     -- Parse the test file
-    let qgraph ← parseQGraphFile path
+    let qgraph ← parseFile path
 
     -- Validate structure
     let valid ← validateQGraph basename qgraph
@@ -221,7 +221,7 @@ def testFile (path : System.FilePath) (goldenPath? : Option System.FilePath := n
       return false
 
     -- Try reconstruction
-    match reconstructZxTermSimple qgraph with
+    match reconstruct qgraph with
     | .ok ⟨n, m, _term⟩ =>
       IO.println s!"    ✓ Reconstructed as ZxTerm {n} {m}"
     | .error e =>
@@ -231,7 +231,7 @@ def testFile (path : System.FilePath) (goldenPath? : Option System.FilePath := n
     match goldenPath? with
     | some goldenPath => do
       if ← goldenPath.pathExists then
-        let golden ← parseQGraphFile goldenPath
+        let golden ← parseFile goldenPath
         let isMatch ← compareQGraphs basename qgraph golden
         if not isMatch then
           IO.println "    ✗ Does not match golden copy"
@@ -365,36 +365,36 @@ def main (args : List String) : IO UInt32 := do
   -- Test 1: Identity
   IO.println "\n1. Testing identity wire:"
   let term1 : ZxTerm 1 1 := ZxTerm.id
-  let qgraph1 := serializeToQGraph term1
+  let qgraph1 := serialize term1
   IO.println s!"   Serialized: {qgraph1.vertices.size} vertices, {qgraph1.edges.size} edges"
-  match reconstructZxTermSimple qgraph1 with
+  match reconstruct qgraph1 with
   | .ok ⟨n, m, _⟩ => IO.println s!"   ✓ Reconstructed: ZxTerm {n} {m}"
   | .error e => IO.println s!"   ✗ Failed: {e}"
 
   -- Test 2: Hadamard
   IO.println "\n2. Testing Hadamard gate:"
   let term2 : ZxTerm 1 1 := ZxTerm.H
-  let qgraph2 := serializeToQGraph term2
+  let qgraph2 := serialize term2
   IO.println s!"   Serialized: {qgraph2.vertices.size} vertices, {qgraph2.edges.size} edges"
-  match reconstructZxTermSimple qgraph2 with
+  match reconstruct qgraph2 with
   | .ok ⟨n, m, _⟩ => IO.println s!"   ✓ Reconstructed: ZxTerm {n} {m}"
   | .error e => IO.println s!"   ✗ Failed: {e}"
 
   -- Test 3: Two parallel Hadamards (tensor product)
   IO.println "\n3. Testing H ⊗ H:"
   let term3 : ZxTerm 2 2 := ZxTerm.H ⊗ ZxTerm.H
-  let qgraph3 := serializeToQGraph term3
+  let qgraph3 := serialize term3
   IO.println s!"   Serialized: {qgraph3.vertices.size} vertices, {qgraph3.edges.size} edges"
-  match reconstructZxTermSimple qgraph3 with
+  match reconstruct qgraph3 with
   | .ok ⟨n, m, _⟩ => IO.println s!"   ✓ Reconstructed: ZxTerm {n} {m}"
   | .error e => IO.println s!"   ✗ Failed: {e}"
 
   -- Test 4: Hadamard composition
   IO.println "\n4. Testing H ; H (should be identity):"
   let term4 : ZxTerm 1 1 := ZxTerm.H ; ZxTerm.H
-  let qgraph4 := serializeToQGraph term4
+  let qgraph4 := serialize term4
   IO.println s!"   Serialized: {qgraph4.vertices.size} vertices, {qgraph4.edges.size} edges"
-  match reconstructZxTermSimple qgraph4 with
+  match reconstruct qgraph4 with
   | .ok ⟨n, m, _⟩ => IO.println s!"   ✓ Reconstructed: ZxTerm {n} {m}"
   | .error e => IO.println s!"   ✗ Failed: {e}"
 
