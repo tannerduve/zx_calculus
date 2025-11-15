@@ -82,11 +82,11 @@ inductive ZxTerm : ℕ → ℕ → Type where
   /-- Parallel composition (tensor): place A and B side by side -/
   | tens {n₁ m₁ n₂ m₂ : ℕ} (A : ZxTerm n₁ m₁) (B : ZxTerm n₂ m₂) : ZxTerm (n₁ + n₂) (m₁ + m₂)
 
+namespace ZxTerm
+
 @[inherit_doc] infixl:90 " ; " => ZxTerm.comp
 
-@[inherit_doc] infixl:80 " ⊗ " => ZxTerm.tens
-
-namespace ZxTerm
+@[inherit_doc] infixl:80 " ⊗' " => ZxTerm.tens
 
 /-! ### Smart Constructors
 
@@ -144,6 +144,6 @@ def dagger {n m : ℕ} : ZxTerm n m → ZxTerm m n
     | .cup => ZxTerm.gen Generator.cap
     | .cap => ZxTerm.gen Generator.cup
   | f ; g => dagger g ; dagger f
-  | f ⊗ g => dagger f ⊗ dagger g
+  | f ⊗' g => dagger f ⊗' dagger g
 
 @[inherit_doc] notation:max A"†" => dagger A

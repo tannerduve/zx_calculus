@@ -45,4 +45,4 @@ def S : ZxTerm 1 1 := Rz (1/2)
 /-- CNOT: Controlled-NOT gate.
     Copies control via Z-spider, XORs with target via X-spider. -/
 def CNOT : ZxTerm 2 2 :=
-  (Z 0 1 2 ⊗ id) ; (id ⊗ X 0 2 1)
+  (Z 0 1 2 ⊗' id) ; (id ⊗' X 0 2 1)

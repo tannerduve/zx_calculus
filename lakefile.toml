@@ -20,3 +20,13 @@ name = "ZxCalculus"
 
 [[lean_lib]]
 name = "tests"
+
+[[require]]
+name = "Parser"
+git = "https://github.com/fgdorais/lean4-parser"
+rev = "9cfe6f912bbb5ce5ad1e06d1b58a30bddae82e63"
+
+[[require]]
+name = "quantumInfo"
+git = "https://github.com/Timeroot/Lean-QuantumInfo.git"
+rev = "7304e98727a411c246899f361b77ca529b31c9a8"

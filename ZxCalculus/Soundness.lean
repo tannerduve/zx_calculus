@@ -1,7 +1,6 @@
 import ZxCalculus.DenotationalSemantics
 import ZxCalculus.RewriteTerm
 import Mathlib.Data.Matrix.Mul
-import ZxCalculus.MatrixLemmas
 
 open scoped Zx
 
@@ -28,34 +27,18 @@ def xCasted (α : ℚ) (n m : ℕ) : ZxTerm (n * 1) (m * 1) :=
 
 /-! ### Helper lemmas for soundness cases -/
 
-lemma soundness_assoc_tens {n₁ m₁ n₂ m₂ n₃ m₃ : ℕ}
-    (f : ZxTerm n₁ m₁) (g : ZxTerm n₂ m₂) (h : ZxTerm n₃ m₃) :
-    (interp f ⊗ₗ interp g) ⊗ₗ interp h = linMapAssoc (interp f ⊗ₗ (interp g ⊗ₗ interp h)) := by
-  sorry
-
-lemma soundness_unit_tens_l {n m : ℕ} (f : ZxTerm n m) :
-    (1 : LinMap 0 0) ⊗ₗ interp f = linMapAddZeroLeft (interp f) := by
-  sorry
-
-lemma soundness_interchange {n₁ k₁ m₁ n₂ k₂ m₂ : ℕ}
-    (f : ZxTerm n₁ k₁) (f' : ZxTerm k₁ m₁) (g : ZxTerm n₂ k₂) (g' : ZxTerm k₂ m₂) :
-    interp ((f ⊗ g) ; (f' ⊗ g')) = interp ((f ; f') ⊗ (g ; g')) := by
-  sorry
-
-lemma soundness_z_fus {n m k : ℕ} (α β : ℚ) :
-    interp (ZxTerm.Z α n m ; ZxTerm.Z β m k) = interp (ZxTerm.Z (α + β) n k) := by
-  sorry
-
-lemma soundness_x_fus {n m k : ℕ} (α β : ℚ) :
-    interp (ZxTerm.X α n m ; ZxTerm.X β m k) = interp (ZxTerm.X (α + β) n k) := by
-  sorry
-
 lemma soundness_z_id :
     interp (ZxTerm.Z 0 1 1) = interp ZxTerm.id := by
-  sorry
+  simp only [ZxTerm.Z, interp, interpGen, ZxTerm.id, Z_spider, qubitSpaceToVec]
+  simp [ket_pow, qubitSpaceEquiv]
+  ext i j
+  simp only [Matrix.add_apply, Matrix.mul_apply, ket0, ket1, Ket.basis]
+  fin_cases i <;> fin_cases j <;> norm_num
 
 lemma soundness_x_id :
     interp (ZxTerm.X 0 1 1) = interp ZxTerm.id := by
+  simp only [ZxTerm.X, interp, interpGen, ZxTerm.id, X_spider, qubitSpaceToVec]
+  simp [ket_pow, qubitSpaceEquiv]
   sorry
 
 lemma soundness_color_change_Z (α : ℚ) (n m : ℕ) :
@@ -66,14 +49,6 @@ lemma soundness_color_change_Z (α : ℚ) (n m : ℕ) :
 lemma soundness_color_change_X (α : ℚ) (n m : ℕ) :
     interp (tensor_pow ZxTerm.H n ; xCasted α n m ; tensor_pow ZxTerm.H m)
     = interp (zCasted α n m) := by
-  sorry
-
-lemma soundness_z_pi_copy {α : ℚ} {k n : ℕ} :
-    interp (x_pi_id_tens k ; ZxTerm.Z α (1 + k) n) = interp (ZxTerm.Z (-α) (1 + k) n ; x_pi_pow n) := by
-  sorry
-
-lemma soundness_x_pi_copy (α : ℚ) (k n : ℕ) :
-    interp (z_pi_id_tens k ; ZxTerm.X α (1 + k) n) = interp (ZxTerm.X (-α) (1 + k) n ; z_pi_pow n) := by
   sorry
 
 /--
@@ -113,12 +88,12 @@ theorem soundness {n m : ℕ} (A B : ZxTerm n m) (equiv : ZxEquiv A B) : interp 
         have hn : n + 0 = n := by simp
         have hm : m + 0 = m := by simp
         rw [interp_cast_congr hn hm]
-        simp [interp, ZxTerm.empty, interpGen]
-    · case interchange => exact soundness_interchange _ _ _ _
-    · case z_fus n m k p q =>
-        exact soundness_z_fus p q
-    · case x_fus n m k p q =>
-        exact soundness_x_fus p q
+        simp only [Nat.add_zero, interp, tensLin, Nat.pow_zero, ZxTerm.empty, interpGen,
+          Matrix.reindex_apply, eq_mp_eq_cast, cast_eq]
+        sorry
+    · case interchange => sorry
+    · case z_fus n m k p q => sorry
+    · case x_fus n m k p q => sorry
     · case z_id =>
         exact soundness_z_id
     · case x_id =>
@@ -127,22 +102,29 @@ theorem soundness {n m : ℕ} (A B : ZxTerm n m) (equiv : ZxEquiv A B) : interp 
         exact soundness_color_change_Z α n m
     · case color_change_X α n m =>
         exact soundness_color_change_X α n m
-    · case z_pi_copy α =>
-        exact soundness_z_pi_copy
-    · case x_pi_copy α =>
-        exact soundness_x_pi_copy α _ _
+    · case z_pi_copy α => sorry
+    · case x_pi_copy α => sorry
     · case z_phase_period α n m =>
-        simp [ZxTerm.Z, interp, interpGen]
+        simp only [ZxTerm.Z, interp, interpGen, Z_spider]
+        congr 1
+        have h1 : ((α + 2 : ℚ) : ℝ) * Real.pi = (α : ℝ) * Real.pi + 2 * Real.pi := by
+          push_cast; ring
+        have h2 : Complex.I * ↑((α : ℝ) * Real.pi + 2 * Real.pi) =
+                  Complex.I * ↑((α : ℝ) * Real.pi) + Complex.I * (2 * Real.pi) := by
+          simp [Complex.ofReal_add]; ring
+        rw [h1, h2, Complex.exp_add]
+        have : Complex.exp (Complex.I * (2 * ↑Real.pi)) = 1 := by
+          rw [mul_comm Complex.I, Complex.exp_two_pi_mul_I]
+        rw [this]; simp
     · case x_phase_period α n m =>
-        simp [ZxTerm.X, interp, interpGen]
-
--- Will need to refine the following statements a bit
--- /--
--- Completeness theorem: For any ZX diagrams `A` and `B`, if `A` and `B` represent the same matrix, they are equivalent under the rewrite rules
--- -/
--- theorem completeness {n m : ℕ} (A B : ZxTerm n m) (equiv : interp A = interp B) : ZxEquiv A B := sorry
-
--- /--
--- Universality: In the Clifford+T fragment, for every matrix `A ∈ ℂ^{2^n} × C^{2^m}`, there exists a ZX diagram `D` such that `interp D = A`
--- -/
--- theorem universal {n m : ℕ} (A : LinMap n m) : ∃ D : ZxTerm n m, interp D = A := sorry
+        simp only [ZxTerm.X, interp, interpGen, X_spider]
+        congr 1
+        have h1 : ((α + 2 : ℚ) : ℝ) * Real.pi = (α : ℝ) * Real.pi + 2 * Real.pi := by
+          push_cast; ring
+        have h2 : Complex.I * ↑((α : ℝ) * Real.pi + 2 * Real.pi) =
+                  Complex.I * ↑((α : ℝ) * Real.pi) + Complex.I * (2 * Real.pi) := by
+          simp [Complex.ofReal_add]; ring
+        rw [h1, h2, Complex.exp_add]
+        have : Complex.exp (Complex.I * (2 * ↑Real.pi)) = 1 := by
+          rw [mul_comm Complex.I, Complex.exp_two_pi_mul_I]
+        rw [this]; simp
